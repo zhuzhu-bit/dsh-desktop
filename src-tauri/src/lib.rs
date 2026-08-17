@@ -712,7 +712,19 @@ fn build_tray(app: &App) {
 
 /// Entry point invoked from `src/main.rs`.
 pub fn run() {
-    let app = tauri::Builder::default()
+    let context = tauri::generate_context!();
+    // The updater plugin hard-fails when `plugins.updater` is absent from the
+    // config, and the config must only exist once the REAL signing pubkey is
+    // generated (no placeholder keys). Register the plugin conditionally; the
+    // update flow treats an unregistered plugin as a log-only check failure.
+    let updater_configured = context
+        .config()
+        .plugins
+        .0
+        .get("updater")
+        .is_some_and(|value| !value.is_null());
+
+    let mut builder = tauri::Builder::default()
         // Second instance: wake the existing window and let this instance
         // exit (the plugin aborts it before setup runs, so no second host,
         // no second tray). argv/cwd are deliberately not logged to avoid
@@ -805,8 +817,15 @@ pub fn run() {
             start_watchdog(app);
             build_tray(app);
             Ok(())
-        })
-        .build(tauri::generate_context!())
+        });
+
+    if updater_configured {
+        // Config carries the real pubkey + endpoints: register the plugin.
+        builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+    }
+
+    let app = builder
+        .build(context)
         .expect("error while building the dsh-desktop shell");
 
     app.run(|app_handle, event| match event {
