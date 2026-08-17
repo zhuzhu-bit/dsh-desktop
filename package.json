@@ -1,0 +1,21 @@
+{
+  "name": "dsh-desktop",
+  "private": true,
+  "version": "0.2.0",
+  "description": "A from-scratch local desktop shell for the DeepSeek Harness (dsh) web UI. Original code; only the public Tauri sidecar pattern is borrowed.",
+  "type": "module",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "prepare:host": "node scripts/prepare-host.mjs",
+    "gen:notices": "node scripts/gen-third-party-notices.mjs",
+    "check:version": "node scripts/check-version-consistency.mjs",
+    "check:secrets": "node scripts/secret-scan.mjs",
+    "check:closure": "node scripts/audit-closure.mjs",
+    "check:patch": "node scripts/check-patch.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capability for the main dsh window (no custom IPC is used by this shell)",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

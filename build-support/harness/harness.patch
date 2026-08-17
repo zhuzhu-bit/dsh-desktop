@@ -1,0 +1,58 @@
+From: dsh-desktop build support
+Subject: Register the dsh-desktop deploy root in the Harness workspace
+
+Adds a dependency-only deploy root package (deploy-roots/dsh-desktop) whose
+production closure is what the dsh-desktop installer bundles. Pure additive
+change: one workspace member entry + one manifest file. Applies against
+47f943859bef60e4160492346772ded9b24f765a with `git apply`.
+
+diff --git a/pnpm-workspace.yaml b/pnpm-workspace.yaml
+--- a/pnpm-workspace.yaml
++++ b/pnpm-workspace.yaml
+@@ -19,6 +19,8 @@ packages:
+   # Deploy root of the single-exe build: a pure dependency manifest whose
+   # closure is what the exe bundles and what the Python runtime distributes.
+   - python/sdk-runtime
++  # Deploy root for the dsh-desktop shell (bundled web runtime).
++  - deploy-roots/dsh-desktop
+ 
+ # Vendored framework packages keep their upstream semver ranges, while local
+ # builds must resolve those matching names to this workspace's pinned sources.
+diff --git a/deploy-roots/dsh-desktop/package.json b/deploy-roots/dsh-desktop/package.json
+new file mode 100644
+--- /dev/null
++++ b/deploy-roots/dsh-desktop/package.json
+@@ -0,0 +1,33 @@
++{
++  "name": "@deepseek-ai/dsh-desktop-deploy-root",
++  "description": "Dependency-only deploy root for the dsh-desktop shell: pnpm deploy materializes this manifest plus its node_modules as the self-contained web runtime bundled into the Tauri installer.",
++  "version": "0.0.1",
++  "private": true,
++  "type": "module",
++  "dependencies": {
++    "@deepseek-ai/dsh": "workspace:^",
++    "@deepseek-ai/cordis-plugin-group": "workspace:^",
++    "@deepseek-ai/dsh-anonymous-user-id": "workspace:^",
++    "@deepseek-ai/dsh-atomic-write": "workspace:^",
++    "@deepseek-ai/dsh-bash-local": "workspace:^",
++    "@deepseek-ai/dsh-code-runtime": "workspace:^",
++    "@deepseek-ai/dsh-compaction": "workspace:^",
++    "@deepseek-ai/dsh-fs": "workspace:^",
++    "@deepseek-ai/dsh-invariants": "workspace:^",
++    "@deepseek-ai/dsh-output-retention": "workspace:^",
++    "@deepseek-ai/dsh-sandbox": "workspace:^",
++    "@deepseek-ai/dsh-scope": "workspace:^",
++    "@deepseek-ai/dsh-session-persistence-sqlite": "workspace:^",
++    "@deepseek-ai/dsh-session-telemetry": "workspace:^",
++    "@deepseek-ai/dsh-session-title-llm": "workspace:^",
++    "@deepseek-ai/dsh-shell": "workspace:^",
++    "@deepseek-ai/dsh-spill": "workspace:^",
++    "@deepseek-ai/dsh-subagent-in-process-driver": "workspace:^",
++    "@deepseek-ai/dsh-subprocess": "workspace:^",
++    "@deepseek-ai/dsh-timeout": "workspace:^",
++    "@deepseek-ai/dsh-typert-generator": "workspace:^",
++    "@deepseek-ai/dsh-web-fetch-http": "workspace:^",
++    "@deepseek-ai/dsh-web-search-exa": "workspace:^",
++    "@deepseek-ai/dsh-workflow": "workspace:^"
++  }
++}

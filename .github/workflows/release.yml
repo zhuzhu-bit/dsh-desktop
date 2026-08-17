@@ -1,0 +1,82 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release (must equal package.json / Cargo.toml / tauri.conf.json and, for tag runs, the v-prefixed tag)
+        required: true
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    environment: release
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version gate (four sources must match exactly)
+        shell: pwsh
+        run: |
+          $pkg = (Get-Content package.json | ConvertFrom-Json).version
+          $cargo = [regex]::Match((Get-Content src-tauri\Cargo.toml -Raw), '(?m)^version\s*=\s*"([^"]+)"').Groups[1].Value
+          $conf = (Get-Content src-tauri\tauri.conf.json | ConvertFrom-Json).version
+          if ($env:GITHUB_EVENT_NAME -eq 'push') {
+            $expected = $env:GITHUB_REF_NAME -replace '^v',''
+          } else {
+            $expected = $env:INPUT_VERSION
+          }
+          Write-Host "expected=$expected pkg=$pkg cargo=$cargo conf=$conf"
+          if ($pkg -ne $expected -or $cargo -ne $expected -or $conf -ne $expected) {
+            Write-Error "version mismatch across package.json / Cargo.toml / tauri.conf.json / git tag"
+            exit 1
+          }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install cargo-about (license checker)
+        run: cargo install cargo-about --locked
+
+      - run: npm ci
+
+      - name: Generate bundled runtime from the pinned Harness commit (fully verified)
+        run: node scripts/prepare-host.mjs
+
+      - name: "License notices (strict: closure present)"
+        run: node scripts/gen-third-party-notices.mjs --check
+
+      - name: Secret scan
+        run: node scripts/secret-scan.mjs
+
+      - name: Build installer, sign and create the DRAFT release
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: v__VERSION__
+          releaseName: 'DSH Desktop v__VERSION__'
+          releaseDraft: true
+          prerelease: false
+          updaterJsonPreferNsis: true
+          uploadUpdaterJson: true
+          uploadUpdaterSignatures: true
+          uploadPlainBinary: false
+          retryAttempts: 3

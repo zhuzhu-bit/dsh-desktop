@@ -1,0 +1,44 @@
+[package]
+name = "dsh-desktop"
+version = "0.2.0"
+description = "A from-scratch local desktop shell for the DeepSeek Harness (dsh) web UI"
+authors = ["zhuzhu-bit"]
+edition = "2021"
+rust-version = "1.77.2"
+license = "MIT"
+
+# Tauri expects this library crate name layout (see src/main.rs).
+[lib]
+name = "dsh_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+serde_json = "1"
+url = "2"
+tauri-plugin-single-instance = "2"
+tauri-plugin-updater = "2"
+
+[target.'cfg(windows)'.dependencies]
+# Belt-and-braces single-instance mutex (the plugin's hidden event window can
+# be destroyed by stray WM_CLOSE from automation tools, which disables its
+# FindWindowW path and lets a second instance through), Job Object based
+# orphan-process protection, and the native update-confirmation dialog.
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_System_Threading",
+  "Win32_System_JobObjects",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
+# Smaller release binaries (the whole point of picking Tauri).
+# NOTE: no `panic = "abort"` — unwinding lets the HostChild Drop guard kill
+# the dsh host even when something unexpected panics.
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

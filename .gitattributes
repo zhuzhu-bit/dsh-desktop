@@ -1,0 +1,10 @@
+# Normalize text files to LF; keep binaries verbatim.
+* text=auto eol=lf
+
+*.png binary
+*.ico binary
+*.icns binary
+*.wav binary
+*.exe binary
+*.dll binary
+*.zip binary

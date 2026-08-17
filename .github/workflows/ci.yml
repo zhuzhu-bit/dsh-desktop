@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install cargo-about (license checker)
+        run: cargo install cargo-about --locked
+
+      - run: npm ci
+
+      - name: Format check
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+
+      - name: Lint (clippy, warnings denied)
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+
+      - name: Build check
+        run: cargo check --manifest-path src-tauri/Cargo.toml
+
+      - name: Version consistency (package.json / Cargo.toml / tauri.conf.json)
+        run: node scripts/check-version-consistency.mjs
+
+      - name: "License notices freshness (closure-less: Rust + static parts)"
+        run: node scripts/gen-third-party-notices.mjs --check
+
+      - name: Harness patch still applies at the pinned commit
+        run: node scripts/check-patch.mjs
+
+      - name: Secret scan
+        run: node scripts/secret-scan.mjs
+
+      # No release secrets are loaded here; this job cannot create releases.
