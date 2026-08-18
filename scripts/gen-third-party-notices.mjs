@@ -134,7 +134,9 @@ function render() {
   for (const [key, value] of Object.entries(subs)) {
     template = template.replaceAll(`{{${key}}}`, value)
   }
-  return template
+  // Deterministic line endings: remote texts fetched through PowerShell can
+  // carry CRLF while the committed file is LF; normalize before comparing.
+  return template.replaceAll('\r\n', '\n')
 }
 
 function normalizeForCILessCompare(doc) {
