@@ -4,31 +4,36 @@
 // under node_modules/@deepseek-ai/, and print the source dir of each missing
 // package so the fix loop can add file: deps mechanically.
 import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { join, relative, sep } from 'node:path'
+import { dirname, join, relative, sep } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const TARGET = 'E:/code/deepseek/work_space/dsh-desktop/src-tauri/resources/host/cli'
-const REPO = 'E:/code/deepseek/deepseek-harness'
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)))
+const TARGET = join(ROOT, 'src-tauri', 'resources', 'host', 'cli')
+// Optional local checkout used only for human-readable source hints.
+const REPO = process.env.DSH_HARNESS_REPO
 const REF_RE = /@deepseek-ai\/([a-z0-9-]+)/g
 
-// 1. Package name -> source dir (harness repo workspaces).
+// 1. Package name -> source dir (harness repo workspaces; optional, display only).
 const nameToDir = new Map()
-for (const root of [join(REPO, 'packages'), join(REPO, 'vendor'), join(REPO, 'apps'), join(REPO, 'native', 'landlock-run', 'packages')]) {
-  if (!statSync(root, { throwIfNoEntry: false })?.isDirectory()) continue
-  const walk = (dir, depth) => {
-    if (depth > 4) return
-    let entries
-    try { entries = readdirSync(dir, { withFileTypes: true }) } catch { return }
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue
-      const p = join(dir, entry.name)
-      try {
-        const pkg = JSON.parse(readFileSync(join(p, 'package.json'), 'utf8'))
-        if (pkg.name?.startsWith('@deepseek-ai/')) nameToDir.set(pkg.name, p)
-        else walk(p, depth + 1)
-      } catch { walk(p, depth + 1) }
+if (REPO) {
+  for (const root of [join(REPO, 'packages'), join(REPO, 'vendor'), join(REPO, 'apps'), join(REPO, 'native', 'landlock-run', 'packages')]) {
+    if (!statSync(root, { throwIfNoEntry: false })?.isDirectory()) continue
+    const walk = (dir, depth) => {
+      if (depth > 4) return
+      let entries
+      try { entries = readdirSync(dir, { withFileTypes: true }) } catch { return }
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue
+        const p = join(dir, entry.name)
+        try {
+          const pkg = JSON.parse(readFileSync(join(p, 'package.json'), 'utf8'))
+          if (pkg.name?.startsWith('@deepseek-ai/')) nameToDir.set(pkg.name, p)
+          else walk(p, depth + 1)
+        } catch { walk(p, depth + 1) }
+      }
     }
+    walk(root, 0)
   }
-  walk(root, 0)
 }
 
 // 2. Scan targets: root (except node_modules) + node_modules/@deepseek-ai/*.
