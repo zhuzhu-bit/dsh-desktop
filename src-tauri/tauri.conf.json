@@ -46,7 +46,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "untrusted comment: minisign public key: 7970E95E65939BCF\nRWTPm5NlXulwecTuoUNBRGxSB4+SHY7ET9ivJAVLijbLKOr0eGpqko88",
+      "pubkey": "untrusted comment: minisign public key: 66D9DDCF67D02BDB\nRWTbK9Bnz93ZZhH7NKd9KJKJ8Di5GIglVvJoXMtE9nu5JVoyBw/QaY/g",
       "endpoints": [
         "https://github.com/zhuzhu-bit/dsh-desktop/releases/latest/download/latest.json"
       ],
