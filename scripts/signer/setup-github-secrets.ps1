@@ -24,14 +24,22 @@ if ($LASTEXITCODE -ne 0) {
 gh api --method PUT "repos/$Repo/environments/release" | Out-Null
 Write-Host "environment 'release' ready on $Repo"
 
-$secure = Read-Host 'Key password (masked)' -AsSecureString
-$password = [System.Net.NetworkCredential]::new('', $secure).Password
-
+# Key (ASCII-only minisign file): pipe via stdin is safe.
 Get-Content $key -Raw | gh secret set TAURI_SIGNING_PRIVATE_KEY --repo $Repo --env release
 if ($LASTEXITCODE -ne 0) { throw 'failed to set TAURI_SIGNING_PRIVATE_KEY' }
-$password | gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --repo $Repo --env release
+
+# Password: set INTERACTIVELY through gh itself. Piping strings into gh from
+# PowerShell re-encodes them through the console codepage, which corrupts any
+# non-ASCII password (this bit us in CI: "Wrong password for that key").
+# gh prompts a masked input — paste the password and press Enter.
+Write-Host 'gh will now ask for the key password (masked). Paste it, then press Enter.'
+gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --repo $Repo --env release
 if ($LASTEXITCODE -ne 0) { throw 'failed to set TAURI_SIGNING_PRIVATE_KEY_PASSWORD' }
 
-Write-Host 'Secrets set on the release environment.'
+Write-Host ''
+Write-Host 'Verification tips:'
+Write-Host '  - test the password locally first (should print a successful signature):'
+Write-Host '      npm exec -- tauri signer sign --private-key "%USERPROFILE%\.dsh-desktop\updater\dsh-desktop.key" LICENSE'
+Write-Host '  - delete the generated LICENSE.sig afterwards.'
 Write-Host 'Reminder: keep an encrypted offline backup of the private key; losing'
 Write-Host 'it means installed clients can never verify future updates.'
