@@ -1,23 +1,21 @@
 # 自动更新设计说明（里程碑 B）
 
-> 状态：**设计稿**。按任务书约定，在项目所有者确认正式外部参数之前，
-> **不实现代码、不修改生产配置、不写入任何假的 URL/公钥/证书**。
-> 本文档只描述策略、配置模板、托管方案、发布顺序、验收矩阵与待确认清单。
+> 状态：**已实现**（0.2.0）。公钥、endpoint、托管方式等参数已由项目所有者确认并落地；
+> 剩余工作为发布流程验收（见 `docs/RELEASING.md`）。签名私钥只存在于所有者的
+> GitHub release Environment 与离线备份中，本仓库不含任何私钥。
 
-## 待项目所有者确认的外部参数（开始实现 B 的前置条件）
+## 已确认的参数
 
-| # | 事项 | 当前状态 |
-|---|---|---|
-| 1 | 最终 `productName`（用于安装包文件名、快捷方式、更新清单） | 未定（现为 "DSH Desktop"） |
-| 2 | 最终应用 `identifier`（**不能沿用 `dev.dsh.desktop`**，决定单实例互斥名、更新包身份） | 未定 |
-| 3 | 正式 HTTPS 更新地址（`latest.json` 的绝对 URL） | 未定 |
-| 4 | 更新文件托管方式（静态对象存储/CDN/自建服务器） | 未定 |
-| 5 | Tauri Updater 公钥（minisign 公钥内容，**不是文件路径**） | 未定 |
-| 6 | Windows Authenticode 代码签名方案（证书来源：购买/内部 CA/Azure Trusted Signing） | 未定 |
-| 7 | 壳项目 LICENSE 与第三方许可文件如何随安装包分发（`THIRD_PARTY_NOTICES`） | 未定 |
-| 8 | 私钥保管与 CI Secret 通道（TAURI_SIGNING_PRIVATE_KEY / PASSWORD） | 未定 |
-
-在 1–8 确认之前，`tauri.conf.json` 保持现状（无 updater 插件、无 `createUpdaterArtifacts`）。
+| 参数 | 值 |
+|---|---|
+| productName | `DSH Desktop` |
+| identifier | `io.github.zhuzhu-bit.dsh-desktop` |
+| 更新地址 | `https://github.com/zhuzhu-bit/dsh-desktop/releases/latest/download/latest.json` |
+| 托管 | GitHub Releases（静态 latest.json） |
+| 公钥 | 所有者本机 `tauri signer generate` 生成（minisign） |
+| 私钥 | GitHub release Environment Secrets（`TAURI_SIGNING_PRIVATE_KEY` / `_PASSWORD`）+ 加密离线备份 |
+| Authenticode | 第一阶段不做（SmartScreen「未知发布者」为已知行为） |
+| 安装包 | NSIS、currentUser、passive 更新模式 |
 
 ## B1. 更新策略（第一版）
 

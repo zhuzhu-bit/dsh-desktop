@@ -150,8 +150,8 @@ Node/dsh/npm/网络；`DSH_NODE`/`DSH_CLI` 环境变量仅用于开发时指向�
 ## 剩余路线图（按需选做）
 
 1. Windows Authenticode 代码签名（改善 SmartScreen 体验，第一阶段明确不做）；
-2. 更新服务器与密钥由所有者管理（设计见 `docs/auto-update-design.md`，
-   确认表见 `docs/auto-update-owner-checklist.md`）。
+2. 自动更新已实现（0.2.0）：设计见 `docs/auto-update-design.md`，
+   发布与验收流程见 `docs/RELEASING.md`。
 
 ## 故障排查
 
