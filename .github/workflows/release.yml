@@ -31,7 +31,8 @@ jobs:
           if ($env:GITHUB_EVENT_NAME -eq 'push') {
             $expected = $env:GITHUB_REF_NAME -replace '^v',''
           } else {
-            $expected = $env:INPUT_VERSION
+            $event = Get-Content $env:GITHUB_EVENT_PATH | ConvertFrom-Json
+            $expected = $event.inputs.version
           }
           Write-Host "expected=$expected pkg=$pkg cargo=$cargo conf=$conf"
           if ($pkg -ne $expected -or $cargo -ne $expected -or $conf -ne $expected) {
